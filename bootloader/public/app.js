@@ -42,7 +42,13 @@ class BootloaderApp {
         });
 
         this.socket.on('service-started', (data) => {
-            this.showNotification(`${data.service} started successfully`, 'success');
+            const serviceName = this.services[data.service]?.name || data.service;
+            const forceText = data.forced ? ' (force started)' : '';
+            this.showNotification(`${serviceName} started successfully${forceText}`, 'success');
+            
+            // Clear pending service key
+            this.pendingServiceKey = null;
+            
             setTimeout(() => {
                 this.refreshStatus();
             }, 2000);
@@ -237,6 +243,9 @@ class BootloaderApp {
         const service = this.services[serviceKey];
         if (!service) return;
 
+        // Store the pending service key for conflict resolution
+        this.pendingServiceKey = serviceKey;
+
         this.showNotification(`Starting ${service.name}...`, 'info');
         
         // Disable all start buttons
@@ -311,7 +320,8 @@ class BootloaderApp {
             // Extract service key from conflict data
             const serviceKey = this.getServiceKeyFromConflict(conflictData);
             if (serviceKey) {
-                this.showNotification('Force starting service - stopping existing service...', 'warning');
+                const serviceName = this.services[serviceKey]?.name || serviceKey;
+                this.showNotification(`Force starting ${serviceName} - stopping existing service...`, 'warning');
                 this.startService(serviceKey, true); // true = force
             }
         });
@@ -326,13 +336,8 @@ class BootloaderApp {
     }
 
     getServiceKeyFromConflict(conflictData) {
-        // Try to determine which service was requested from the message
-        for (const [key, service] of Object.entries(this.services)) {
-            if (conflictData.message.includes(service.name)) {
-                return key;
-            }
-        }
-        return null;
+        // Store the requested service key when conflict occurs
+        return this.pendingServiceKey || null;
     }
 
     async stopAllServices() {
