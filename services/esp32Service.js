@@ -102,6 +102,7 @@ class ESP32Service extends EventEmitter {
       if (macMatch && !data.startsWith('ACK:') && !data.startsWith('ERROR:')) {
         const macAddress = macMatch[1];
         console.log(`🔍 FOUND MAC IN ANY DATA: ${macAddress}`);
+        console.log(`📋 RAW ESP32 DATA: "${data}"`); // Debug all incoming data
         this.handleTriviaModeDevice(macAddress);
         
         // Check if this might be a buzzer press for identification
@@ -115,6 +116,16 @@ class ESP32Service extends EventEmitter {
           // For testing: any heartbeat can trigger identification if device is being pressed
           // This allows testing even when buzzer is not armed
           console.log(`💓 Heartbeat from ${macAddress} - checking for manual identification trigger`);
+          
+          // DEBUGGING: Check if ESP32 is actually armed
+          if (data.includes('Message type: 2')) {
+            console.log(`🔍 HEARTBEAT DEBUG - Looking for armed status in: "${data}"`);
+            // Parse the heartbeat data to see if device is armed
+            const deviceState = this.deviceStates.get(macAddress);
+            if (deviceState) {
+              console.log(`📊 Device ${macAddress} state:`, deviceState);
+            }
+          }
         }
       }
       
