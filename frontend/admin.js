@@ -153,8 +153,11 @@ class OSCBuzzerAdmin {
             const response = await fetch('/api/buzzers/devices');
             const data = await response.json();
             
+            console.log('Devices API response:', data);
+            
             if (data.success) {
                 this.devices = data.devices;
+                console.log('Loaded devices:', this.devices);
                 this.renderDevices();
                 this.updateDeviceCount();
             }
@@ -181,6 +184,7 @@ class OSCBuzzerAdmin {
                 <div class="card-subtitle">
                     Last seen: ${device.last_seen ? new Date(device.last_seen).toLocaleString() : 'Never'}
                 </div>
+                ${device.discovery_mode ? `<div class="discovery-mode">Mode: ${device.discovery_mode}</div>` : ''}
                 ${device.press_count > 0 ? `<div>Press count: ${device.press_count}</div>` : ''}
                 <button class="btn btn-primary btn-small" onclick="app.bindDevice('${device.mac_address}')">
                     🔗 Bind Device
@@ -530,6 +534,7 @@ class OSCBuzzerAdmin {
     }
 
     handleDeviceUpdate(data) {
+        console.log('Device update received:', data);
         this.loadDevices(); // Refresh devices display
     }
 
