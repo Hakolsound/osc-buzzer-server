@@ -116,6 +116,21 @@ class ESP32Service extends EventEmitter {
           timestamp: new Date().toISOString()
         });
         
+      } else if (data.includes('Heartbeat from device')) {
+        // Handle Waze Trivia format heartbeats
+        // "Heartbeat from device 1" 
+        const deviceMatch = data.match(/Heartbeat from device (\d+)/);
+        if (deviceMatch) {
+          const deviceId = deviceMatch[1];
+          this.handleTriviaModeHeartbeat(deviceId);
+        }
+      } else if (data.includes('Received') && data.includes('bytes from:')) {
+        // Handle "Received 16 bytes from: EC:62:60:1D:E8:D4"
+        const macMatch = data.match(/from: ([A-F0-9:]{17})/);
+        if (macMatch) {
+          const macAddress = macMatch[1];
+          this.handleTriviaModeDevice(macAddress);
+        }
       } else if (data.startsWith('ACK:')) {
         console.log('ESP32 Command acknowledged:', data.substring(4));
       } else if (data.startsWith('ERROR:')) {
@@ -205,6 +220,41 @@ class ESP32Service extends EventEmitter {
       ...statusData,
       timestamp: new Date().toISOString()
     });
+  }
+
+  handleTriviaModeDevice(macAddress) {
+    // Handle trivia mode device discovery from "Received X bytes from: MAC"
+    const existingState = this.deviceStates.get(macAddress) || {};
+    
+    const deviceState = {
+      mac_address: macAddress,
+      last_seen: Date.now(),
+      last_online: Date.now(),
+      online: true,
+      armed: false,
+      pressed: false,
+      press_count: existingState.press_count || 0,
+      last_press: existingState.last_press || null,
+      discovery_mode: 'trivia_heartbeat'
+    };
+    
+    this.deviceStates.set(macAddress, deviceState);
+    console.log(`Discovered trivia mode device: ${macAddress}`);
+    
+    // Emit device update
+    this.emit('device-update', {
+      esp32_data: `DISCOVERED:${macAddress}`,
+      timestamp: new Date().toISOString()
+    });
+  }
+
+  handleTriviaModeHeartbeat(deviceId) {
+    // Handle "Heartbeat from device X" - we need to associate this with MAC addresses
+    console.log(`Heartbeat from trivia device ${deviceId}`);
+    
+    // For now, just log it. The MAC address discovery happens in handleTriviaModeDevice
+    this.lastHeartbeatDevice = deviceId;
+    this.lastHeartbeatTime = Date.now();
   }
 
   sendCommand(command) {
