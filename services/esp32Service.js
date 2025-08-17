@@ -124,13 +124,12 @@ class ESP32Service extends EventEmitter {
           const deviceId = deviceMatch[1];
           this.handleTriviaModeHeartbeat(deviceId);
         }
-      } else if (data.includes('bytes from:') || data.includes('from:')) {
-        // Handle any line with "bytes from:" or "from:" and a MAC address
-        // "Received 16 bytes from: EC:62:60:1D:E8:D4" or "ESP32 Data: Received 16 bytes from: EC:62:60:1D:E8:D4"
+      } else if (data.includes('Received') && data.includes('bytes from:')) {
+        // Handle "Received 16 bytes from: EC:62:60:1D:E8:D4" (raw ESP32 data)
         const macMatch = data.match(/([A-F0-9:]{17})/);
         if (macMatch) {
           const macAddress = macMatch[1];
-          console.log(`🔍 Found MAC address in data: ${macAddress}`);
+          console.log(`🔍 Found MAC address in received data: ${macAddress}`);
           this.handleTriviaModeDevice(macAddress);
         }
       } else if (data.match(/^[A-F0-9:]{17}$/)) {
