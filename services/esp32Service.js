@@ -131,6 +131,16 @@ class ESP32Service extends EventEmitter {
           const macAddress = macMatch[1];
           this.handleTriviaModeDevice(macAddress);
         }
+      } else if (data.match(/^[A-F0-9:]{17}$/)) {
+        // Handle standalone MAC address lines
+        this.handleTriviaModeDevice(data.trim());
+      } else if (data.includes('ESP32 Data:') && data.includes('from:')) {
+        // Handle "ESP32 Data: Received 16 bytes from: EC:62:60:1D:E8:D4"
+        const macMatch = data.match(/from: ([A-F0-9:]{17})/);
+        if (macMatch) {
+          const macAddress = macMatch[1];
+          this.handleTriviaModeDevice(macAddress);
+        }
       } else if (data.startsWith('ACK:')) {
         console.log('ESP32 Command acknowledged:', data.substring(4));
       } else if (data.startsWith('ERROR:')) {
@@ -239,13 +249,17 @@ class ESP32Service extends EventEmitter {
     };
     
     this.deviceStates.set(macAddress, deviceState);
-    console.log(`Discovered trivia mode device: ${macAddress}`);
+    console.log(`✅ Discovered trivia mode device: ${macAddress}`);
+    console.log(`📊 Total devices in deviceStates: ${this.deviceStates.size}`);
     
     // Emit device update
     this.emit('device-update', {
       esp32_data: `DISCOVERED:${macAddress}`,
       timestamp: new Date().toISOString()
     });
+    
+    // Also log all current devices
+    console.log('📋 Current device states:', Array.from(this.deviceStates.keys()));
   }
 
   handleTriviaModeHeartbeat(deviceId) {
