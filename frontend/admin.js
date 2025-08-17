@@ -213,18 +213,11 @@ class OSCBuzzerAdmin {
                     ${device.discovery_mode ? `<div class="discovery-mode">Mode: ${device.discovery_mode}</div>` : ''}
                     ${device.press_count > 0 ? `<div>Press count: ${device.press_count}</div>` : ''}
                     ${!isIdentified ? '<div class="identification-hint">💡 Buzzers are auto-armed - Hold button for 3 seconds to identify</div>' : ''}
-                    <div class="device-actions">
-                        <button class="btn ${bindButtonEnabled ? 'btn-primary' : 'btn-disabled'} btn-small" 
-                                onclick="app.bindDevice('${device.mac_address}')" 
-                                ${bindButtonEnabled ? '' : 'disabled'}>
-                            🔗 Bind Device
-                        </button>
-                        ${!isIdentified ? `
-                            <button class="btn btn-warning btn-small" onclick="app.testIdentify('${device.mac_address}')">
-                                ✨ Test ID
-                            </button>
-                        ` : ''}
-                    </div>
+                    <button class="btn ${bindButtonEnabled ? 'btn-primary' : 'btn-disabled'} btn-small" 
+                            onclick="app.bindDevice('${device.mac_address}')" 
+                            ${bindButtonEnabled ? '' : 'disabled'}>
+                        🔗 Bind Device
+                    </button>
                 </div>
             `;
         }).join('');
@@ -237,26 +230,6 @@ class OSCBuzzerAdmin {
     }
 
 
-    async testIdentify(macAddress) {
-        try {
-            const response = await fetch('/api/buzzers/identify', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ mac_address: macAddress })
-            });
-
-            const data = await response.json();
-            
-            if (data.success) {
-                this.showNotification(`Testing identification for ${macAddress}`, 'info');
-            } else {
-                this.showNotification('Error triggering identification test', 'error');
-            }
-        } catch (error) {
-            this.showNotification('Error triggering identification test', 'error');
-            console.error('Identification test error:', error);
-        }
-    }
 
 
     async unpairDevice(macAddress, deviceName) {

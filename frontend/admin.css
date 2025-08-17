@@ -641,16 +641,4 @@ body {
     transform: none;
 }
 
-.device-actions {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-    margin-top: 12px;
-}
-
-.device-actions .btn {
-    flex: 1;
-    min-width: 100px;
-    font-size: 0.8rem;
-}
 
