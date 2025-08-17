@@ -124,21 +124,26 @@ class ESP32Service extends EventEmitter {
           const deviceId = deviceMatch[1];
           this.handleTriviaModeHeartbeat(deviceId);
         }
-      } else if (data.includes('Received') && data.includes('bytes from:')) {
-        // Handle "Received 16 bytes from: EC:62:60:1D:E8:D4"
-        const macMatch = data.match(/from: ([A-F0-9:]{17})/);
+      } else if (data.includes('bytes from:') || data.includes('from:')) {
+        // Handle any line with "bytes from:" or "from:" and a MAC address
+        // "Received 16 bytes from: EC:62:60:1D:E8:D4" or "ESP32 Data: Received 16 bytes from: EC:62:60:1D:E8:D4"
+        const macMatch = data.match(/([A-F0-9:]{17})/);
         if (macMatch) {
           const macAddress = macMatch[1];
+          console.log(`🔍 Found MAC address in data: ${macAddress}`);
           this.handleTriviaModeDevice(macAddress);
         }
       } else if (data.match(/^[A-F0-9:]{17}$/)) {
         // Handle standalone MAC address lines
-        this.handleTriviaModeDevice(data.trim());
-      } else if (data.includes('ESP32 Data:') && data.includes('from:')) {
-        // Handle "ESP32 Data: Received 16 bytes from: EC:62:60:1D:E8:D4"
-        const macMatch = data.match(/from: ([A-F0-9:]{17})/);
+        const macAddress = data.trim();
+        console.log(`🔍 Found standalone MAC: ${macAddress}`);
+        this.handleTriviaModeDevice(macAddress);
+      } else {
+        // Fallback: search for any MAC address pattern in the data
+        const macMatch = data.match(/([A-F0-9]{2}:[A-F0-9]{2}:[A-F0-9]{2}:[A-F0-9]{2}:[A-F0-9]{2}:[A-F0-9]{2})/);
         if (macMatch) {
           const macAddress = macMatch[1];
+          console.log(`🔍 Found MAC via fallback pattern: ${macAddress}`);
           this.handleTriviaModeDevice(macAddress);
         }
       } else if (data.startsWith('ACK:')) {
@@ -313,10 +318,35 @@ class ESP32Service extends EventEmitter {
   }
 
   async startDeviceScan() {
-    const success = this.sendCommand('SCAN');
+    // For trivia mode, we don't send SCAN command since the firmware doesn't support it
+    // Instead, we just return the currently discovered devices
+    console.log('🔍 Device scan requested - returning discovered devices');
+    console.log(`📊 Current deviceStates size: ${this.deviceStates.size}`);
+    console.log('📋 Current devices:', Array.from(this.deviceStates.keys()));
+    
+    // If we're connected to hardware, the devices should already be discovered from heartbeats
+    // If not connected, we'll return simulation devices
+    const success = this.isConnectedFlag;
+    
+    if (!success) {
+      // Add some simulation devices for testing when no hardware
+      this.deviceStates.set('AA:BB:CC:DD:EE:FF', {
+        mac_address: 'AA:BB:CC:DD:EE:FF',
+        last_seen: Date.now(),
+        last_online: Date.now(),
+        online: true,
+        armed: false,
+        pressed: false,
+        press_count: 0,
+        last_press: null,
+        discovery_mode: 'simulation'
+      });
+    }
+    
     return {
       success: true,
-      scanning: true,
+      scanning: false, // Not actively scanning, just returning discovered
+      devicesFound: this.deviceStates.size,
       timestamp: Date.now(),
       hardwareConnected: success
     };
