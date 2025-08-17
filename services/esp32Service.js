@@ -86,6 +86,14 @@ class ESP32Service extends EventEmitter {
     try {
       console.log('ESP32 Data:', data);
       
+      // Check for MAC addresses in ANY format - more aggressive matching
+      const macMatch = data.match(/([A-F0-9]{2}:[A-F0-9]{2}:[A-F0-9]{2}:[A-F0-9]{2}:[A-F0-9]{2}:[A-F0-9]{2})/);
+      if (macMatch && !data.startsWith('ACK:') && !data.startsWith('ERROR:')) {
+        const macAddress = macMatch[1];
+        console.log(`🔍 FOUND MAC IN ANY DATA: ${macAddress}`);
+        this.handleTriviaModeDevice(macAddress);
+      }
+      
       if (data.startsWith('BUZZER:')) {
         // Parse BUZZER:mac_address,timestamp format
         const buzzerData = data.substring(7);
