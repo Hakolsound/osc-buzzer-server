@@ -66,6 +66,13 @@ class ESP32Service extends EventEmitter {
 
       try {
         await this.openSerialPort();
+        
+        // Auto-arm buzzers for OSC controller setup
+        setTimeout(() => {
+          console.log('🔫 Auto-arming all buzzers for OSC setup');
+          this.sendCommand('ARM');
+        }, 2000); // Wait 2 seconds after connection
+        
       } catch (error) {
         console.warn('Could not connect to ESP32 hardware, continuing in simulation mode');
         this.isConnectedFlag = false;
@@ -264,13 +271,14 @@ class ESP32Service extends EventEmitter {
   handleTriviaModeDevice(macAddress) {
     // Handle trivia mode device discovery from "Received X bytes from: MAC"
     const existingState = this.deviceStates.get(macAddress) || {};
+    const isNewDevice = !this.deviceStates.has(macAddress);
     
     const deviceState = {
       mac_address: macAddress,
       last_seen: Date.now(),
       last_online: Date.now(),
       online: true,
-      armed: false,
+      armed: true, // Always armed for OSC setup
       pressed: false,
       press_count: existingState.press_count || 0,
       last_press: existingState.last_press || null,
@@ -280,6 +288,12 @@ class ESP32Service extends EventEmitter {
     this.deviceStates.set(macAddress, deviceState);
     console.log(`✅ Discovered trivia mode device: ${macAddress}`);
     console.log(`📊 Total devices in deviceStates: ${this.deviceStates.size}`);
+    
+    // Auto-arm new devices for OSC controller setup
+    if (isNewDevice) {
+      console.log(`🔫 Auto-arming new device: ${macAddress}`);
+      this.sendCommand('ARM');
+    }
     
     // Emit device update
     this.emit('device-update', {

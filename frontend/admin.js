@@ -212,7 +212,7 @@ class OSCBuzzerAdmin {
                     </div>
                     ${device.discovery_mode ? `<div class="discovery-mode">Mode: ${device.discovery_mode}</div>` : ''}
                     ${device.press_count > 0 ? `<div>Press count: ${device.press_count}</div>` : ''}
-                    ${!isIdentified ? '<div class="identification-hint">💡 Hold buzzer for 3 seconds to identify</div>' : ''}
+                    ${!isIdentified ? '<div class="identification-hint">💡 Buzzers are auto-armed - Hold button for 3 seconds to identify</div>' : ''}
                     <div class="device-actions">
                         <button class="btn ${bindButtonEnabled ? 'btn-primary' : 'btn-disabled'} btn-small" 
                                 onclick="app.bindDevice('${device.mac_address}')" 
@@ -220,9 +220,6 @@ class OSCBuzzerAdmin {
                             🔗 Bind Device
                         </button>
                         ${!isIdentified ? `
-                            <button class="btn btn-info btn-small" onclick="app.armBuzzer('${device.mac_address}')">
-                                🔫 Arm Buzzer
-                            </button>
                             <button class="btn btn-warning btn-small" onclick="app.testIdentify('${device.mac_address}')">
                                 ✨ Test ID
                             </button>
@@ -239,26 +236,6 @@ class OSCBuzzerAdmin {
         document.getElementById('binding-name').value = deviceName;
     }
 
-    async armBuzzer(macAddress) {
-        try {
-            const response = await fetch('/api/buzzers/arm', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ mac_address: macAddress })
-            });
-
-            const data = await response.json();
-            
-            if (data.success) {
-                this.showNotification(`Buzzer ${macAddress} armed! Now you can press the button.`, 'success');
-            } else {
-                this.showNotification('Error arming buzzer', 'error');
-            }
-        } catch (error) {
-            this.showNotification('Error arming buzzer', 'error');
-            console.error('Arm buzzer error:', error);
-        }
-    }
 
     async testIdentify(macAddress) {
         try {
