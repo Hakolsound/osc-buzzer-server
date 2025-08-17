@@ -138,6 +138,10 @@ class ESP32Service extends EventEmitter {
         const macAddress = data.trim();
         console.log(`🔍 Found standalone MAC: ${macAddress}`);
         this.handleTriviaModeDevice(macAddress);
+      } else if (data.startsWith('ACK:')) {
+        console.log('ESP32 Command acknowledged:', data.substring(4));
+      } else if (data.startsWith('ERROR:')) {
+        console.error('ESP32 Error:', data.substring(6));
       } else {
         // Fallback: search for any MAC address pattern in the data
         const macMatch = data.match(/([A-F0-9]{2}:[A-F0-9]{2}:[A-F0-9]{2}:[A-F0-9]{2}:[A-F0-9]{2}:[A-F0-9]{2})/);
@@ -146,10 +150,6 @@ class ESP32Service extends EventEmitter {
           console.log(`🔍 Found MAC via fallback pattern: ${macAddress}`);
           this.handleTriviaModeDevice(macAddress);
         }
-      } else if (data.startsWith('ACK:')) {
-        console.log('ESP32 Command acknowledged:', data.substring(4));
-      } else if (data.startsWith('ERROR:')) {
-        console.error('ESP32 Error:', data.substring(6));
       }
     } catch (error) {
       console.error('Error parsing ESP32 data:', error);
