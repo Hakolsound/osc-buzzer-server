@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pi Service Bootloader</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🚀 Pi Service Bootloader</h1>
+            <p>Choose which service to run on your Raspberry Pi</p>
+            <div class="system-info">
+                <span id="pi-status" class="status-badge">🟢 Pi Online</span>
+                <span id="uart-status" class="status-badge">⚡ UART Available</span>
+            </div>
+        </header>
+
+        <main class="main">
+            <div class="services-grid">
+                <!-- Services will be populated by JavaScript -->
+            </div>
+
+            <div class="control-panel">
+                <div class="current-service">
+                    <h3>Current Service</h3>
+                    <div id="current-service-display">
+                        <span class="no-service">No service running</span>
+                    </div>
+                </div>
+
+                <div class="actions">
+                    <button id="stop-all-btn" class="btn btn-danger" disabled>
+                        🛑 Stop All Services
+                    </button>
+                    <button id="refresh-btn" class="btn btn-secondary">
+                        🔄 Refresh Status
+                    </button>
+                </div>
+            </div>
+
+            <div class="system-panel">
+                <h3>System Information</h3>
+                <div id="system-info" class="system-info-display">
+                    Loading system information...
+                </div>
+            </div>
+        </main>
+
+        <div id="notification" class="notification hidden"></div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

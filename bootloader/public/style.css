@@ -1,0 +1,446 @@
+/* Pi Service Bootloader CSS */
+@import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@300;400;500;600;700&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --primary: #4A9EBF;
+    --primary-dark: #396B7D;
+    --success: #6B9B6E;
+    --warning: #C18B47;
+    --danger: #B85C5C;
+    --secondary: #8A7BA8;
+    --surface: #1a1a2e;
+    --surface-light: rgba(255, 255, 255, 0.1);
+    --on-surface: #e0e0e0;
+    --border: rgba(255, 255, 255, 0.2);
+}
+
+body {
+    font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    color: var(--on-surface);
+    min-height: 100vh;
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+    min-height: 100vh;
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    color: var(--primary);
+}
+
+.header p {
+    font-size: 1.2rem;
+    color: rgba(224, 224, 224, 0.8);
+    margin-bottom: 1rem;
+}
+
+.system-info {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.status-badge {
+    background: var(--surface-light);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.services-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 2rem;
+    margin-bottom: 3rem;
+}
+
+.service-card {
+    background: var(--surface-light);
+    border: 2px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.service-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--primary);
+    box-shadow: 0 8px 25px rgba(74, 158, 191, 0.3);
+}
+
+.service-card.active {
+    border-color: var(--success);
+    background: rgba(107, 155, 110, 0.1);
+}
+
+.service-card.active::before {
+    content: "🟢 RUNNING";
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: var(--success);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.service-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    display: block;
+}
+
+.service-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--on-surface);
+}
+
+.service-description {
+    color: rgba(224, 224, 224, 0.7);
+    margin-bottom: 0.5rem;
+}
+
+.service-url {
+    font-family: monospace;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+}
+
+.service-status {
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+}
+
+.status-online {
+    color: var(--success);
+}
+
+.status-stopped {
+    color: rgba(224, 224, 224, 0.5);
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    min-width: 120px;
+    justify-content: center;
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: var(--primary-dark);
+    transform: translateY(-1px);
+}
+
+.btn-success {
+    background: var(--success);
+    color: white;
+}
+
+.btn-success:hover:not(:disabled) {
+    background: #5a855d;
+}
+
+.btn-danger {
+    background: var(--danger);
+    color: white;
+}
+
+.btn-danger:hover:not(:disabled) {
+    background: #a04b4b;
+}
+
+.btn-secondary {
+    background: var(--surface-light);
+    color: var(--on-surface);
+    border: 1px solid var(--border);
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.btn-link {
+    background: transparent;
+    color: var(--primary);
+    border: 1px solid var(--primary);
+}
+
+.btn-link:hover {
+    background: var(--primary);
+    color: white;
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.control-panel {
+    background: var(--surface-light);
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.current-service {
+    margin-bottom: 2rem;
+}
+
+.current-service h3 {
+    color: var(--primary);
+    margin-bottom: 1rem;
+}
+
+.current-service-info {
+    background: rgba(107, 155, 110, 0.1);
+    border: 1px solid var(--success);
+    border-radius: 8px;
+    padding: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.no-service {
+    color: rgba(224, 224, 224, 0.5);
+    font-style: italic;
+}
+
+.actions {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.system-panel {
+    background: var(--surface-light);
+    border-radius: 12px;
+    padding: 2rem;
+}
+
+.system-panel h3 {
+    color: var(--secondary);
+    margin-bottom: 1rem;
+}
+
+.system-info-display {
+    background: #000;
+    color: #0f0;
+    padding: 1rem;
+    border-radius: 8px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    white-space: pre-line;
+    overflow-x: auto;
+}
+
+.notification {
+    position: fixed;
+    top: 2rem;
+    right: 2rem;
+    background: var(--primary);
+    color: white;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transform: translateX(400px);
+    transition: transform 0.3s ease;
+    z-index: 1000;
+    max-width: 300px;
+}
+
+.notification.show {
+    transform: translateX(0);
+}
+
+.notification.success {
+    background: var(--success);
+}
+
+.notification.error {
+    background: var(--danger);
+}
+
+.notification.hidden {
+    display: none;
+}
+
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/* Conflict Dialog */
+.conflict-dialog {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 9999;
+}
+
+.conflict-dialog-backdrop {
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.3s ease;
+}
+
+.conflict-dialog-content {
+    background: var(--surface);
+    border: 2px solid var(--danger);
+    border-radius: 16px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    animation: slideIn 0.3s ease;
+}
+
+.conflict-dialog-header {
+    background: var(--danger);
+    color: white;
+    padding: 1.5rem;
+    text-align: center;
+    border-radius: 14px 14px 0 0;
+}
+
+.conflict-dialog-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.conflict-dialog-body {
+    padding: 2rem;
+    line-height: 1.6;
+}
+
+.conflict-dialog-body p {
+    margin-bottom: 0.5rem;
+}
+
+.conflict-dialog-body strong {
+    color: var(--warning);
+}
+
+.conflict-dialog-actions {
+    padding: 1.5rem 2rem;
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    border-top: 1px solid var(--border);
+}
+
+.conflict-dialog-actions .btn {
+    min-width: 140px;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideIn {
+    from { 
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+    }
+    to { 
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.service-details {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    margin-top: 1rem;
+    text-align: left;
+}
+
+.service-details span {
+    padding: 0.25rem;
+}
+
+.service-details .label {
+    color: rgba(224, 224, 224, 0.6);
+}
+
+.service-details .value {
+    font-family: monospace;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .container {
+        padding: 1rem;
+    }
+    
+    .header h1 {
+        font-size: 2rem;
+    }
+    
+    .services-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .actions {
+        flex-direction: column;
+    }
+    
+    .system-info {
+        flex-direction: column;
+        align-items: center;
+    }
+}
