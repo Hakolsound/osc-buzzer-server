@@ -213,11 +213,21 @@ class OSCBuzzerAdmin {
                     ${device.discovery_mode ? `<div class="discovery-mode">Mode: ${device.discovery_mode}</div>` : ''}
                     ${device.press_count > 0 ? `<div>Press count: ${device.press_count}</div>` : ''}
                     ${!isIdentified ? '<div class="identification-hint">💡 Hold buzzer for 3 seconds to identify</div>' : ''}
-                    <button class="btn ${bindButtonEnabled ? 'btn-primary' : 'btn-disabled'} btn-small" 
-                            onclick="app.bindDevice('${device.mac_address}')" 
-                            ${bindButtonEnabled ? '' : 'disabled'}>
-                        🔗 Bind Device
-                    </button>
+                    <div class="device-actions">
+                        <button class="btn ${bindButtonEnabled ? 'btn-primary' : 'btn-disabled'} btn-small" 
+                                onclick="app.bindDevice('${device.mac_address}')" 
+                                ${bindButtonEnabled ? '' : 'disabled'}>
+                            🔗 Bind Device
+                        </button>
+                        ${!isIdentified ? `
+                            <button class="btn btn-info btn-small" onclick="app.armBuzzer('${device.mac_address}')">
+                                🔫 Arm Buzzer
+                            </button>
+                            <button class="btn btn-warning btn-small" onclick="app.testIdentify('${device.mac_address}')">
+                                ✨ Test ID
+                            </button>
+                        ` : ''}
+                    </div>
                 </div>
             `;
         }).join('');
@@ -227,6 +237,48 @@ class OSCBuzzerAdmin {
         document.getElementById('binding-mac').value = macAddress;
         const deviceName = `Buzzer ${macAddress.slice(-5).replace(':', '')}`;
         document.getElementById('binding-name').value = deviceName;
+    }
+
+    async armBuzzer(macAddress) {
+        try {
+            const response = await fetch('/api/buzzers/arm', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ mac_address: macAddress })
+            });
+
+            const data = await response.json();
+            
+            if (data.success) {
+                this.showNotification(`Buzzer ${macAddress} armed! Now you can press the button.`, 'success');
+            } else {
+                this.showNotification('Error arming buzzer', 'error');
+            }
+        } catch (error) {
+            this.showNotification('Error arming buzzer', 'error');
+            console.error('Arm buzzer error:', error);
+        }
+    }
+
+    async testIdentify(macAddress) {
+        try {
+            const response = await fetch('/api/buzzers/identify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ mac_address: macAddress })
+            });
+
+            const data = await response.json();
+            
+            if (data.success) {
+                this.showNotification(`Testing identification for ${macAddress}`, 'info');
+            } else {
+                this.showNotification('Error triggering identification test', 'error');
+            }
+        } catch (error) {
+            this.showNotification('Error triggering identification test', 'error');
+            console.error('Identification test error:', error);
+        }
     }
 
 

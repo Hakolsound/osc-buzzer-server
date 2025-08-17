@@ -107,5 +107,37 @@ module.exports = function(esp32Service) {
     }
   });
 
+  // Arm buzzer for testing button presses
+  router.post('/arm', async (req, res) => {
+    try {
+      const { mac_address } = req.body;
+      
+      if (!mac_address) {
+        return res.status(400).json({
+          success: false,
+          error: 'MAC address is required'
+        });
+      }
+      
+      // Send ARM command to ESP32
+      const armCommand = 'ARM';
+      esp32Service.sendCommand(armCommand);
+      
+      res.json({
+        success: true,
+        message: 'ARM command sent to buzzer',
+        mac_address,
+        command: armCommand,
+        timestamp: Date.now()
+      });
+    } catch (error) {
+      console.error('Error sending ARM command:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message
+      });
+    }
+  });
+
   return router;
 };
