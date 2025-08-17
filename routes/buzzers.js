@@ -77,5 +77,35 @@ module.exports = function(esp32Service) {
     }
   });
 
+  // Trigger identification for testing
+  router.post('/identify', async (req, res) => {
+    try {
+      const { mac_address } = req.body;
+      
+      if (!mac_address) {
+        return res.status(400).json({
+          success: false,
+          error: 'MAC address is required'
+        });
+      }
+      
+      // Directly trigger identification
+      esp32Service.handlePotentialIdentification(mac_address);
+      
+      res.json({
+        success: true,
+        message: 'Identification triggered',
+        mac_address,
+        timestamp: Date.now()
+      });
+    } catch (error) {
+      console.error('Error triggering identification:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message
+      });
+    }
+  });
+
   return router;
 };

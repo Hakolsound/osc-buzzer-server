@@ -7,6 +7,8 @@ class OSCBuzzerAdmin {
         this.commands = [];
         this.targets = [];
         this.mappings = [];
+        this.identifiedDevices = new Set(); // Track which devices are identified
+        this.pressingDevices = new Set(); // Track which devices are being pressed
         
         this.initializeEventListeners();
         this.connectSocketEvents();
@@ -69,6 +71,23 @@ class OSCBuzzerAdmin {
 
         this.socket.on('osc-sent', (data) => {
             this.handleOSCSent(data);
+        });
+
+        // Buzzer identification events
+        this.socket.on('buzzer-press-start', (data) => {
+            this.handleBuzzerPressStart(data);
+        });
+
+        this.socket.on('buzzer-press-end', (data) => {
+            this.handleBuzzerPressEnd(data);
+        });
+
+        this.socket.on('buzzer-identified', (data) => {
+            this.handleBuzzerIdentified(data);
+        });
+
+        this.socket.on('buzzer-identification-cleared', (data) => {
+            this.handleBuzzerIdentificationCleared(data);
         });
     }
 
@@ -175,28 +194,65 @@ class OSCBuzzerAdmin {
             return;
         }
 
-        container.innerHTML = this.devices.map(device => `
-            <div class="device-card ${device.online ? 'online' : 'offline'}">
-                <div class="card-header">
-                    <span class="card-title">${device.mac_address}</span>
-                    <span class="card-status ${device.status}">${device.status}</span>
+        container.innerHTML = this.devices.map(device => {
+            const isIdentified = this.identifiedDevices.has(device.mac_address);
+            const isPressing = this.pressingDevices.has(device.mac_address);
+            const bindButtonEnabled = isIdentified;
+            
+            return `
+                <div class="device-card ${device.online ? 'online' : 'offline'} ${isIdentified ? 'identified' : ''} ${isPressing ? 'pressing' : ''}" data-mac="${device.mac_address}">
+                    <div class="card-header">
+                        <span class="card-title">${device.mac_address}</span>
+                        <span class="card-status ${device.status}">${device.status}</span>
+                        ${isIdentified ? '<span class="identification-badge">✨ IDENTIFIED</span>' : ''}
+                        ${isPressing ? '<span class="pressing-badge">🔘 PRESSING...</span>' : ''}
+                    </div>
+                    <div class="card-subtitle">
+                        Last seen: ${device.last_seen ? new Date(device.last_seen).toLocaleString() : 'Never'}
+                    </div>
+                    ${device.discovery_mode ? `<div class="discovery-mode">Mode: ${device.discovery_mode}</div>` : ''}
+                    ${device.press_count > 0 ? `<div>Press count: ${device.press_count}</div>` : ''}
+                    ${!isIdentified ? '<div class="identification-hint">💡 Hold buzzer for 3 seconds to identify</div>' : ''}
+                    <div class="device-actions">
+                        <button class="btn ${bindButtonEnabled ? 'btn-primary' : 'btn-disabled'} btn-small" 
+                                onclick="app.bindDevice('${device.mac_address}')" 
+                                ${bindButtonEnabled ? '' : 'disabled'}>
+                            🔗 Bind Device
+                        </button>
+                        ${!isIdentified ? `<button class="btn btn-warning btn-small" onclick="app.testIdentify('${device.mac_address}')">
+                            🧑‍🔬 Test Identify
+                        </button>` : ''}
+                    </div>
                 </div>
-                <div class="card-subtitle">
-                    Last seen: ${device.last_seen ? new Date(device.last_seen).toLocaleString() : 'Never'}
-                </div>
-                ${device.discovery_mode ? `<div class="discovery-mode">Mode: ${device.discovery_mode}</div>` : ''}
-                ${device.press_count > 0 ? `<div>Press count: ${device.press_count}</div>` : ''}
-                <button class="btn btn-primary btn-small" onclick="app.bindDevice('${device.mac_address}')">
-                    🔗 Bind Device
-                </button>
-            </div>
-        `).join('');
+            `;
+        }).join('');
     }
 
     bindDevice(macAddress) {
         document.getElementById('binding-mac').value = macAddress;
         const deviceName = `Buzzer ${macAddress.slice(-5).replace(':', '')}`;
         document.getElementById('binding-name').value = deviceName;
+    }
+
+    async testIdentify(macAddress) {
+        try {
+            const response = await fetch('/api/buzzers/identify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ mac_address: macAddress })
+            });
+
+            const data = await response.json();
+            
+            if (data.success) {
+                this.showNotification(`Testing identification for ${macAddress}`, 'info');
+            } else {
+                this.showNotification('Error triggering identification test', 'error');
+            }
+        } catch (error) {
+            this.showNotification('Error triggering identification test', 'error');
+            console.error('Identification test error:', error);
+        }
     }
 
     updateDeviceCount() {
@@ -628,6 +684,54 @@ class OSCBuzzerAdmin {
                 </div>
             </div>
         `).join('');
+    }
+
+    handleBuzzerPressStart(data) {
+        console.log('Buzzer press started:', data);
+        this.pressingDevices.add(data.mac_address);
+        this.renderDevices(); // Update device cards to show pressing state
+        
+        const deviceCard = document.querySelector(`[data-mac="${data.mac_address}"]`);
+        if (deviceCard) {
+            deviceCard.classList.add('pressing');
+        }
+    }
+
+    handleBuzzerPressEnd(data) {
+        console.log('Buzzer press ended:', data);
+        this.pressingDevices.delete(data.mac_address);
+        this.renderDevices();
+        
+        const deviceCard = document.querySelector(`[data-mac="${data.mac_address}"]`);
+        if (deviceCard) {
+            deviceCard.classList.remove('pressing');
+        }
+    }
+
+    handleBuzzerIdentified(data) {
+        console.log('Buzzer identified:', data);
+        this.identifiedDevices.add(data.mac_address);
+        this.pressingDevices.delete(data.mac_address); // Clear pressing state
+        this.renderDevices(); // Update device cards to show identification
+        
+        const deviceCard = document.querySelector(`[data-mac="${data.mac_address}"]`);
+        if (deviceCard) {
+            deviceCard.classList.add('identified');
+            deviceCard.classList.remove('pressing');
+        }
+        
+        this.showNotification(`Device ${data.mac_address} identified! You can now bind it.`, 'success');
+    }
+
+    handleBuzzerIdentificationCleared(data) {
+        console.log('Buzzer identification cleared:', data);
+        this.identifiedDevices.delete(data.mac_address);
+        this.renderDevices();
+        
+        const deviceCard = document.querySelector(`[data-mac="${data.mac_address}"]`);
+        if (deviceCard) {
+            deviceCard.classList.remove('identified');
+        }
     }
 
     showNotification(message, type = 'info') {

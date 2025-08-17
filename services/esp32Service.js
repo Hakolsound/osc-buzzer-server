@@ -18,6 +18,10 @@ class ESP32Service extends EventEmitter {
     this.isConnectedFlag = false;
     this.deviceStates = new Map();
     
+    // Identification system
+    this.identificationTimers = new Map(); // MAC -> timer
+    this.identificationThreshold = 3000; // 3 seconds
+    
     this.serialPortPath = process.env.ESP32_SERIAL_PORT || '/dev/ttyUSB0';
     this.baudRate = parseInt(process.env.ESP32_BAUD_RATE) || 115200;
   }
@@ -92,6 +96,19 @@ class ESP32Service extends EventEmitter {
         const macAddress = macMatch[1];
         console.log(`🔍 FOUND MAC IN ANY DATA: ${macAddress}`);
         this.handleTriviaModeDevice(macAddress);
+        
+        // Check if this might be a buzzer press for identification
+        if (data.includes('Message type: 1') || data.toLowerCase().includes('press')) {
+          console.log(`🔘 Potential buzzer press from ${macAddress}`);
+          this.handlePotentialIdentification(macAddress);
+        }
+        
+        // Also check for any heartbeat to allow manual identification testing
+        if (data.includes('Message type: 2') || data.includes('Heartbeat')) {
+          // For testing: any heartbeat can trigger identification if device is being pressed
+          // This allows testing even when buzzer is not armed
+          console.log(`💓 Heartbeat from ${macAddress} - checking for manual identification trigger`);
+        }
       }
       
       if (data.startsWith('BUZZER:')) {
@@ -281,6 +298,88 @@ class ESP32Service extends EventEmitter {
     // For now, just log it. The MAC address discovery happens in handleTriviaModeDevice
     this.lastHeartbeatDevice = deviceId;
     this.lastHeartbeatTime = Date.now();
+  }
+
+  // Handle potential buzzer identification (long press detection)
+  handlePotentialIdentification(macAddress) {
+    console.log(`🔍 Potential identification from ${macAddress}`);
+    
+    // Check if this is a press (button down) or release (button up)
+    // For trivia mode, we need to detect sustained "pressed" state
+    const deviceState = this.deviceStates.get(macAddress);
+    if (!deviceState) return;
+
+    // If device is already in identification mode, extend the timer
+    if (this.identificationTimers.has(macAddress)) {
+      clearTimeout(this.identificationTimers.get(macAddress));
+    }
+
+    // Start identification timer
+    const timer = setTimeout(() => {
+      this.triggerIdentification(macAddress);
+    }, this.identificationThreshold);
+
+    this.identificationTimers.set(macAddress, timer);
+    
+    // Update device state to show it's being pressed
+    deviceState.pressed = true;
+    deviceState.press_start = Date.now();
+    
+    // Emit press start to GUI
+    this.io.to('admin').emit('buzzer-press-start', {
+      mac_address: macAddress,
+      timestamp: Date.now()
+    });
+  }
+
+  triggerIdentification(macAddress) {
+    console.log(`✨ IDENTIFICATION TRIGGERED for ${macAddress}`);
+    
+    const deviceState = this.deviceStates.get(macAddress);
+    if (deviceState) {
+      deviceState.identifying = true;
+      deviceState.identification_time = Date.now();
+      
+      // Emit identification event to GUI
+      this.io.to('admin').emit('buzzer-identified', {
+        mac_address: macAddress,
+        device_name: deviceState.device_name || macAddress,
+        timestamp: Date.now()
+      });
+      
+      // Clear identification after 10 seconds
+      setTimeout(() => {
+        if (deviceState) {
+          deviceState.identifying = false;
+        }
+        this.io.to('admin').emit('buzzer-identification-cleared', {
+          mac_address: macAddress,
+          timestamp: Date.now()
+        });
+      }, 10000);
+    }
+    
+    // Clean up timer
+    this.identificationTimers.delete(macAddress);
+  }
+
+  clearIdentificationTimer(macAddress) {
+    if (this.identificationTimers.has(macAddress)) {
+      clearTimeout(this.identificationTimers.get(macAddress));
+      this.identificationTimers.delete(macAddress);
+      
+      const deviceState = this.deviceStates.get(macAddress);
+      if (deviceState) {
+        deviceState.pressed = false;
+        deviceState.press_start = null;
+      }
+      
+      // Emit press end to GUI
+      this.io.to('admin').emit('buzzer-press-end', {
+        mac_address: macAddress,
+        timestamp: Date.now()
+      });
+    }
   }
 
   sendCommand(command) {
