@@ -213,16 +213,11 @@ class OSCBuzzerAdmin {
                     ${device.discovery_mode ? `<div class="discovery-mode">Mode: ${device.discovery_mode}</div>` : ''}
                     ${device.press_count > 0 ? `<div>Press count: ${device.press_count}</div>` : ''}
                     ${!isIdentified ? '<div class="identification-hint">💡 Hold buzzer for 3 seconds to identify</div>' : ''}
-                    <div class="device-actions">
-                        <button class="btn ${bindButtonEnabled ? 'btn-primary' : 'btn-disabled'} btn-small" 
-                                onclick="app.bindDevice('${device.mac_address}')" 
-                                ${bindButtonEnabled ? '' : 'disabled'}>
-                            🔗 Bind Device
-                        </button>
-                        ${!isIdentified ? `<button class="btn btn-warning btn-small" onclick="app.testIdentify('${device.mac_address}')">
-                            🧑‍🔬 Test Identify
-                        </button>` : ''}
-                    </div>
+                    <button class="btn ${bindButtonEnabled ? 'btn-primary' : 'btn-disabled'} btn-small" 
+                            onclick="app.bindDevice('${device.mac_address}')" 
+                            ${bindButtonEnabled ? '' : 'disabled'}>
+                        🔗 Bind Device
+                    </button>
                 </div>
             `;
         }).join('');
@@ -234,24 +229,32 @@ class OSCBuzzerAdmin {
         document.getElementById('binding-name').value = deviceName;
     }
 
-    async testIdentify(macAddress) {
+
+    async unpairDevice(macAddress, deviceName) {
+        const confirmMessage = `Are you sure you want to unpair "${deviceName}" (${macAddress})?\n\nThis will remove the device binding and all associated mappings.`;
+        
+        if (!confirm(confirmMessage)) {
+            return;
+        }
+        
         try {
-            const response = await fetch('/api/buzzers/identify', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ mac_address: macAddress })
+            const response = await fetch(`/api/bindings/${encodeURIComponent(macAddress)}`, {
+                method: 'DELETE'
             });
 
             const data = await response.json();
             
             if (data.success) {
-                this.showNotification(`Testing identification for ${macAddress}`, 'info');
+                this.showNotification(`Device "${deviceName}" unpaired successfully`, 'success');
+                this.identifiedDevices.delete(macAddress); // Clear identified state
+                this.loadBindings(); // Refresh bindings list
+                this.loadDevices(); // Refresh devices display
             } else {
-                this.showNotification('Error triggering identification test', 'error');
+                this.showNotification(data.error || 'Error unpairing device', 'error');
             }
         } catch (error) {
-            this.showNotification('Error triggering identification test', 'error');
-            console.error('Identification test error:', error);
+            this.showNotification('Error unpairing device', 'error');
+            console.error('Unpair error:', error);
         }
     }
 
@@ -329,9 +332,12 @@ class OSCBuzzerAdmin {
                 </div>
                 <div class="card-subtitle">${binding.mac_address}</div>
                 ${binding.description ? `<div>${binding.description}</div>` : ''}
-                <div style="margin-top: 12px;">
+                <div style="margin-top: 12px; display: flex; gap: 8px;">
                     <button class="btn btn-secondary btn-small" onclick="app.viewMappings('${binding.mac_address}')">
-                        View Mappings
+                        📊 View Mappings
+                    </button>
+                    <button class="btn btn-warning btn-small" onclick="app.unpairDevice('${binding.mac_address}', '${binding.device_name}')">
+                        🔓 Unpair
                     </button>
                 </div>
             </div>
@@ -718,6 +724,14 @@ class OSCBuzzerAdmin {
         if (deviceCard) {
             deviceCard.classList.add('identified');
             deviceCard.classList.remove('pressing');
+            
+            // Add dramatic blinking effect for 3 seconds
+            deviceCard.classList.add('identified-blink');
+            setTimeout(() => {
+                if (deviceCard) {
+                    deviceCard.classList.remove('identified-blink');
+                }
+            }, 3000);
         }
         
         this.showNotification(`Device ${data.mac_address} identified! You can now bind it.`, 'success');

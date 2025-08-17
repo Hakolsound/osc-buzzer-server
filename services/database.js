@@ -267,6 +267,20 @@ class Database {
     return await this.all('SELECT * FROM activity_log ORDER BY timestamp DESC LIMIT ?', [limit]);
   }
 
+  // Delete methods for unpair functionality
+  async deleteBuzzerBinding(macAddress) {
+    return await this.run('DELETE FROM buzzer_bindings WHERE mac_address = ?', [macAddress]);
+  }
+
+  async deleteMappingsForBuzzer(macAddress) {
+    // First get the binding to get its ID
+    const binding = await this.getBuzzerBindingByMac(macAddress);
+    if (binding) {
+      return await this.run('DELETE FROM buzzer_mappings WHERE buzzer_binding_id = ?', [binding.id]);
+    }
+    return { changes: 0 };
+  }
+
   isConnected() {
     return this.db !== null;
   }

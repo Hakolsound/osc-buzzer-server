@@ -79,6 +79,42 @@ module.exports = function(database, oscService) {
     }
   });
 
+  // Delete binding by MAC address (unpair device)
+  router.delete('/:mac_address', async (req, res) => {
+    try {
+      const { mac_address } = req.params;
+      
+      // Check if binding exists
+      const binding = await database.getBuzzerBindingByMac(mac_address);
+      if (!binding) {
+        return res.status(404).json({
+          success: false,
+          error: 'Binding not found'
+        });
+      }
+
+      // Delete all mappings for this binding first
+      await database.deleteMappingsForBuzzer(mac_address);
+      
+      // Delete the binding
+      await database.deleteBuzzerBinding(mac_address);
+      
+      res.json({
+        success: true,
+        message: `Device ${binding.device_name} (${mac_address}) unpaired successfully`,
+        device_name: binding.device_name,
+        mac_address: mac_address,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error deleting binding:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message
+      });
+    }
+  });
+
   // Get mappings for a specific buzzer
   router.get('/:mac_address/mappings', async (req, res) => {
     try {

@@ -552,6 +552,30 @@ body {
     box-shadow: 0 0 20px rgba(196, 176, 80, 0.3);
 }
 
+.device-card.identified-blink {
+    animation: identified-flash 0.5s ease-in-out 6;
+}
+
+@keyframes identified-flash {
+    0% {
+        background: rgba(196, 176, 80, 0.1);
+        box-shadow: 0 0 20px rgba(196, 176, 80, 0.3);
+        border-color: var(--accent);
+    }
+    50% {
+        background: rgba(196, 176, 80, 0.4);
+        box-shadow: 0 0 40px rgba(196, 176, 80, 0.8);
+        border-color: var(--accent);
+        transform: scale(1.02);
+    }
+    100% {
+        background: rgba(196, 176, 80, 0.1);
+        box-shadow: 0 0 20px rgba(196, 176, 80, 0.3);
+        border-color: var(--accent);
+        transform: scale(1);
+    }
+}
+
 .device-card.pressing {
     border-color: var(--warning);
     background: rgba(193, 139, 71, 0.1);
@@ -617,14 +641,3 @@ body {
     transform: none;
 }
 
-.device-actions {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    margin-top: 12px;
-}
-
-.device-actions .btn {
-    flex: 1;
-    min-width: 120px;
-}
