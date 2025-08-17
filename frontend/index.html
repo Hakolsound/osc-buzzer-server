@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OSC Buzzer Server Admin</title>
+    <link rel="stylesheet" href="admin.css">
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+    <div id="app">
+        <nav class="admin-nav">
+            <h1>🎛️ OSC Buzzer Server</h1>
+            <div class="nav-info" id="nav-info">
+                <div class="system-status">
+                    <span id="esp32-status" class="status-indicator">ESP32: <span class="status-text">Unknown</span></span>
+                    <span id="osc-status" class="status-indicator">OSC: <span class="status-text">Ready</span></span>
+                    <span id="device-count" class="device-count">Devices: 0</span>
+                </div>
+            </div>
+        </nav>
+
+        <main class="admin-main">
+            <div class="config-tabs">
+                <button class="config-tab active" data-tab="binding">🔗 Binding</button>
+                <button class="config-tab" data-tab="commands">⚡ Commands</button>
+                <button class="config-tab" data-tab="targets">🎯 Targets</button>
+                <button class="config-tab" data-tab="test">🧪 Test</button>
+                <button class="config-tab" data-tab="monitor">📊 Monitor</button>
+            </div>
+
+            <!-- Binding Tab -->
+            <div id="binding-tab" class="tab-content active">
+                <div class="tab-header">
+                    <h2>Buzzer Binding</h2>
+                    <p>Bind ESP32 buzzer MAC addresses to logical device names</p>
+                </div>
+                
+                <div class="section">
+                    <h3>ESP32 Devices</h3>
+                    <button id="scan-devices-btn" class="btn btn-primary">🔄 Scan for Devices</button>
+                    <div id="esp32-devices" class="device-grid"></div>
+                </div>
+
+                <div class="section">
+                    <h3>Device Bindings</h3>
+                    <div class="binding-controls">
+                        <div class="form-group">
+                            <label>MAC Address:</label>
+                            <input type="text" id="binding-mac" placeholder="AA:BB:CC:DD:EE:FF" />
+                        </div>
+                        <div class="form-group">
+                            <label>Device Name:</label>
+                            <input type="text" id="binding-name" placeholder="Team Red Buzzer" />
+                        </div>
+                        <div class="form-group">
+                            <label>Description:</label>
+                            <input type="text" id="binding-description" placeholder="Optional description" />
+                        </div>
+                        <button id="create-binding-btn" class="btn btn-success">➕ Create Binding</button>
+                    </div>
+                    <div id="bindings-list" class="bindings-grid"></div>
+                </div>
+            </div>
+
+            <!-- Commands Tab -->
+            <div id="commands-tab" class="tab-content">
+                <div class="tab-header">
+                    <h2>OSC Commands</h2>
+                    <p>Manage OSC commands that can be triggered by buzzer presses</p>
+                </div>
+
+                <div class="section">
+                    <h3>Command Categories</h3>
+                    <div class="category-filters">
+                        <button class="category-btn active" data-category="all">All</button>
+                        <button class="category-btn" data-category="resolume">Resolume</button>
+                        <button class="category-btn" data-category="qlab">QLab</button>
+                        <button class="category-btn" data-category="lighting">Lighting</button>
+                        <button class="category-btn" data-category="audio">Audio</button>
+                        <button class="category-btn" data-category="custom">Custom</button>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>Create Custom Command</h3>
+                    <div class="command-form">
+                        <div class="form-group">
+                            <label>Name:</label>
+                            <input type="text" id="cmd-name" placeholder="My Custom Command" />
+                        </div>
+                        <div class="form-group">
+                            <label>OSC Address:</label>
+                            <input type="text" id="cmd-address" placeholder="/custom/command" />
+                        </div>
+                        <div class="form-group">
+                            <label>Category:</label>
+                            <select id="cmd-category">
+                                <option value="custom">Custom</option>
+                                <option value="resolume">Resolume</option>
+                                <option value="qlab">QLab</option>
+                                <option value="lighting">Lighting</option>
+                                <option value="audio">Audio</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Arguments (JSON):</label>
+                            <input type="text" id="cmd-args" placeholder='[1.0, "param"]' value="[]" />
+                        </div>
+                        <div class="form-group">
+                            <label>Description:</label>
+                            <input type="text" id="cmd-description" placeholder="Optional description" />
+                        </div>
+                        <button id="create-command-btn" class="btn btn-success">➕ Create Command</button>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>Available Commands</h3>
+                    <div id="commands-list" class="commands-grid"></div>
+                </div>
+            </div>
+
+            <!-- Targets Tab -->
+            <div id="targets-tab" class="tab-content">
+                <div class="tab-header">
+                    <h2>OSC Targets</h2>
+                    <p>Configure remote machines to send OSC messages to</p>
+                </div>
+
+                <div class="section">
+                    <h3>Create Target</h3>
+                    <div class="target-form">
+                        <div class="form-group">
+                            <label>Name:</label>
+                            <input type="text" id="target-name" placeholder="Resolume Machine" />
+                        </div>
+                        <div class="form-group">
+                            <label>IP Address:</label>
+                            <input type="text" id="target-ip" placeholder="192.168.1.100" />
+                        </div>
+                        <div class="form-group">
+                            <label>Port:</label>
+                            <input type="number" id="target-port" placeholder="7000" min="1" max="65535" />
+                        </div>
+                        <div class="form-group">
+                            <label>Description:</label>
+                            <input type="text" id="target-description" placeholder="Optional description" />
+                        </div>
+                        <button id="create-target-btn" class="btn btn-success">➕ Create Target</button>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>Configured Targets</h3>
+                    <div id="targets-list" class="targets-grid"></div>
+                </div>
+            </div>
+
+            <!-- Test Tab -->
+            <div id="test-tab" class="tab-content">
+                <div class="tab-header">
+                    <h2>System Testing</h2>
+                    <p>Test ESP32 communication and OSC message sending</p>
+                </div>
+
+                <div class="section">
+                    <h3>ESP32 Testing</h3>
+                    <div class="test-controls">
+                        <button id="test-esp32-status-btn" class="btn btn-info">📡 Get ESP32 Status</button>
+                        <div class="simulate-controls">
+                            <input type="text" id="sim-mac" placeholder="AA:BB:CC:DD:EE:FF" />
+                            <button id="simulate-buzzer-btn" class="btn btn-warning">⚡ Simulate Buzzer Press</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>OSC Testing</h3>
+                    <div class="osc-test-form">
+                        <div class="form-group">
+                            <label>Command:</label>
+                            <select id="test-command-select">
+                                <option value="">Select command...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Target:</label>
+                            <select id="test-target-select">
+                                <option value="">Select target...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Custom Args (optional):</label>
+                            <input type="text" id="test-custom-args" placeholder='[1.0, "test"]' />
+                        </div>
+                        <button id="send-test-osc-btn" class="btn btn-warning">🚀 Send Test OSC</button>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>Mapping Test</h3>
+                    <p>Create mappings between buzzers, commands, and targets</p>
+                    <div id="mapping-controls" class="mapping-form"></div>
+                </div>
+            </div>
+
+            <!-- Monitor Tab -->
+            <div id="monitor-tab" class="tab-content">
+                <div class="tab-header">
+                    <h2>Live Monitoring</h2>
+                    <p>Monitor real-time activity</p>
+                    <div class="monitor-controls">
+                        <button id="clear-monitor-btn" class="btn btn-secondary">🗑️ Clear</button>
+                        <label>
+                            <input type="checkbox" id="auto-scroll-monitor" checked />
+                            Auto-scroll
+                        </label>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>Activity Log</h3>
+                    <div id="activity-log" class="activity-log"></div>
+                </div>
+
+                <div class="section">
+                    <h3>Current Mappings</h3>
+                    <div id="mappings-overview" class="mappings-overview"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="admin.js"></script>
+</body>
+</html>
